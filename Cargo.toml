@@ -1,0 +1,7 @@
+[package]
+name = "wca-developer-to-tsv"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+sqlparser = { git = "https://github.com/Daniel-Anker-Hermansen/sqlparser-rs", version = "0.51.0" }
