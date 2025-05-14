@@ -97,7 +97,7 @@ fn string_of_col<'a>(expr: &'a Expr, file: &mut impl Write) -> io::Result<()> {
 			expr: v,
 		} => {
 			if let Expr::Value(Value::Number(s, _)) = v.as_ref() {
-				write_escaped(b"-", file)?;
+				file.write_all(b"-")?;
 				write_escaped(s.as_bytes(), file)
 			} else {
 				unreachable!()
