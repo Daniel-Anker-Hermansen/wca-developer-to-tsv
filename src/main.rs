@@ -36,7 +36,10 @@ fn main() -> io::Result<()> {
 					let name = &create_table.name.0[0].value;
 					files.insert(
 						name.to_owned(),
-						BufWriter::with_capacity(DEFAULT_CAPACITY, fs::File::create(format!("tables/{}.tsv", name))?),
+						BufWriter::with_capacity(
+							DEFAULT_CAPACITY,
+							fs::File::create(format!("tables/{}.tsv", name))?,
+						),
 					);
 					let file = files.get_mut(name).unwrap();
 					for col in &create_table.columns {
@@ -71,10 +74,12 @@ fn main() -> io::Result<()> {
 
 fn write_escaped(bytes: &[u8], file: &mut impl Write) -> io::Result<()> {
 	for &x in bytes {
-		if x == b'\t' || x == b'\n' || x == b'\r' {
-			file.write_all(&[b'\\'])?;
+		match x {
+			b'\t' => file.write_all(b"\\t")?,
+			b'\n' => file.write_all(b"\\n")?,
+			b'\r' => file.write_all(b"\\r")?,
+			_ => file.write_all(&[x])?,
 		}
-		file.write_all(&[x])?;
 	}
 	file.write_all(&[b'\t'])
 }
