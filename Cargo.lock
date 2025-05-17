@@ -4,14 +4,14 @@ version = 4
 
 [[package]]
 name = "log"
-version = "0.4.22"
+version = "0.4.27"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "a7a70ba024b9dc04c27ea2f0c0548feb474ec5c54bba33a7f72f873a39d07b24"
+checksum = "13dc2df351e3202783a1fe0d44375f7295ffb4049267b0f3018346dc122a1d94"
 
 [[package]]
 name = "sqlparser"
-version = "0.51.0"
-source = "git+https://github.com/Daniel-Anker-Hermansen/sqlparser-rs#52a47f912090539342c700fbdec23b0291c4fb3f"
+version = "0.51.1"
+source = "git+https://github.com/Daniel-Anker-Hermansen/sqlparser-rs#908615c6a3f1dc4930482e127b5731583992049f"
 dependencies = [
  "log",
 ]

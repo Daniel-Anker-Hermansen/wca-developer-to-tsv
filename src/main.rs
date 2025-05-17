@@ -1,7 +1,8 @@
 use std::{
 	collections::HashMap,
 	env, fs,
-	io::{self, BufWriter, Write},
+	io::{self, BufWriter, Read, Write},
+	os::unix::fs::MetadataExt,
 	process,
 };
 
@@ -12,6 +13,38 @@ use sqlparser::{
 	tokenizer::Token,
 };
 
+struct ProgressRead<R> {
+	read: R,
+	size: usize,
+	consumed: usize,
+	progress: f64,
+}
+
+impl<R> ProgressRead<R> {
+	fn new(read: R, size: usize) -> ProgressRead<R> {
+		ProgressRead {
+			read,
+			size,
+			consumed: 0,
+			progress: 0.0,
+		}
+	}
+}
+
+impl<R: Read> Read for ProgressRead<R> {
+	fn read(&mut self, buf: &mut [u8]) -> io::Result<usize> {
+		self.read.read(buf).inspect(|read| {
+			self.consumed += read;
+			let progress = 100.0 * self.consumed as f64 / self.size as f64;
+			if progress > self.progress + 0.05 {
+				self.progress = progress;
+				print!("{:05.2}%\r", self.progress);
+				let _ = std::io::stdout().flush();
+			}
+		})
+	}
+}
+
 const DEFAULT_CAPACITY: usize = 128 * 1024;
 
 fn main() -> io::Result<()> {
@@ -20,8 +53,9 @@ fn main() -> io::Result<()> {
 		process::exit(1);
 	};
 	let file = fs::File::open(path)?;
+	let size = file.metadata()?.size();
 	let dialect = dialect::MySqlDialect {};
-	let mut parser = Parser::new(&dialect, file);
+	let mut parser = Parser::new_read(&dialect, ProgressRead::new(file, size as usize));
 	let mut files = HashMap::new();
 	if fs::read_dir("tables").is_err() {
 		fs::create_dir("tables")?;
