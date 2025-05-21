@@ -2,7 +2,6 @@ use std::{
 	collections::HashMap,
 	env, fs,
 	io::{self, BufWriter, Read, Write},
-	os::unix::fs::MetadataExt,
 	process,
 };
 
@@ -53,7 +52,7 @@ fn main() -> io::Result<()> {
 		process::exit(1);
 	};
 	let file = fs::File::open(path)?;
-	let size = file.metadata()?.size();
+	let size = file.metadata()?.len();
 	let dialect = dialect::MySqlDialect {};
 	let mut parser = Parser::new_read(&dialect, ProgressRead::new(file, size as usize));
 	let mut files = HashMap::new();
