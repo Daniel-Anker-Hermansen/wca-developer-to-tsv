@@ -1,8 +1,7 @@
 use std::{
 	collections::HashMap,
-	env, fs,
-	io::{self, BufWriter, Read, Write},
-	process,
+	fs,
+	io::{self, BufWriter, Cursor, Read, Write},
 };
 
 use sqlparser::{
@@ -46,13 +45,41 @@ impl<R: Read> Read for ProgressRead<R> {
 
 const DEFAULT_CAPACITY: usize = 128 * 1024;
 
-fn main() -> io::Result<()> {
-	let Some(path) = env::args().nth(1) else {
-		println!("Usage: wca-developer-to-sql <path-to-sql-file>");
-		process::exit(1);
-	};
-	let file = fs::File::open(path)?;
-	let size = file.metadata()?.len();
+#[derive(Debug)]
+#[allow(dead_code)] // it is not dead due to main return.
+enum Error {
+	IO(io::Error),
+	Reqwest(reqwest::Error),
+	Zip(zip::result::ZipError),
+}
+
+impl From<io::Error> for Error {
+	fn from(value: io::Error) -> Self {
+		Error::IO(value)
+	}
+}
+
+impl From<reqwest::Error> for Error {
+	fn from(value: reqwest::Error) -> Self {
+		Error::Reqwest(value)
+	}
+}
+
+impl From<zip::result::ZipError> for Error {
+	fn from(value: zip::result::ZipError) -> Self {
+		Error::Zip(value)
+	}
+}
+
+fn main() -> Result<(), Error> {
+	println!("Downloading database ...");
+	let zip_file = reqwest::blocking::get(
+		"https://assets.worldcubeassociation.org/export/developer/wca-developer-database-dump.zip",
+	)?
+	.bytes()?;
+	let mut archive = zip::ZipArchive::new(Cursor::new(zip_file))?;
+	let file = archive.by_index(0)?;
+	let size = file.size();
 	let dialect = dialect::MySqlDialect {};
 	let mut parser = Parser::new_read(&dialect, ProgressRead::new(file, size as usize));
 	let mut files = HashMap::new();
